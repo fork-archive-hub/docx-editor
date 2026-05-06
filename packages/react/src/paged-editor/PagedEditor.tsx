@@ -55,6 +55,7 @@ import type {
   ImageRun,
   PageMargins,
   Run,
+  SectionBreakBlock,
   TextBoxBlock,
 } from '@eigenpal/docx-core/layout-engine';
 import { DEFAULT_TEXTBOX_MARGINS, DEFAULT_TEXTBOX_WIDTH } from '@eigenpal/docx-core/layout-engine';
@@ -1720,20 +1721,37 @@ const PagedEditorComponent = forwardRef<PagedEditorRef, PagedEditorProps>(
             hfFooterHeight(firstPageFooterForRender)
           );
 
+          // When header/footer content exceeds the authored margin space,
+          // extend the margins so body content gets pushed clear of the
+          // header and footer. Apply to:
+          //   1. `margins` (body-level fallback used when a section break
+          //      doesn't carry its own margins)
+          //   2. `finalMargins` (used by the trailing section)
+          //   3. Every `sb.margins` carried on `sectionBreak` blocks — the
+          //      layout engine prefers these over the body-level fallback,
+          //      so without this they keep the unextended OOXML values and
+          //      the body still overlaps header/footer.
+          const extendHeader = headerContentHeight > availableHeaderSpace;
+          const extendFooter = footerContentHeight > availableFooterSpace;
           let effectiveMargins = margins;
-          if (
-            headerContentHeight > availableHeaderSpace ||
-            footerContentHeight > availableFooterSpace
-          ) {
-            effectiveMargins = { ...margins };
-            if (headerContentHeight > availableHeaderSpace) {
-              effectiveMargins.top = Math.max(margins.top, headerDistance + headerContentHeight);
-            }
-            if (footerContentHeight > availableFooterSpace) {
-              effectiveMargins.bottom = Math.max(
-                margins.bottom,
-                footerDistance + footerContentHeight
-              );
+          let effectiveFinalMargins = finalMargins;
+          if (extendHeader || extendFooter) {
+            const extend = (m: PageMargins): PageMargins => {
+              const out = { ...m };
+              if (extendHeader) {
+                out.top = Math.max(m.top, headerDistance + headerContentHeight);
+              }
+              if (extendFooter) {
+                out.bottom = Math.max(m.bottom, footerDistance + footerContentHeight);
+              }
+              return out;
+            };
+            effectiveMargins = extend(margins);
+            effectiveFinalMargins = extend(finalMargins);
+            for (const block of newBlocks) {
+              if (block.kind !== 'sectionBreak') continue;
+              const sb = block as SectionBreakBlock;
+              if (sb.margins) sb.margins = extend(sb.margins);
             }
           }
 
@@ -1754,7 +1772,7 @@ const PagedEditorComponent = forwardRef<PagedEditorRef, PagedEditorProps>(
             pageSize,
             margins: effectiveMargins,
             finalPageSize,
-            finalMargins,
+            finalMargins: effectiveFinalMargins,
             columns: finalColumns,
             bodyBreakType,
             pageGap,

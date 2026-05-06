@@ -702,8 +702,13 @@ function convertParagraphAttrs(
     }));
   }
 
-  // Page break control
-  if (pmAttrs.pageBreakBefore || pmAttrs.renderedPageBreakBefore) {
+  // Page break control. `renderedPageBreakBefore` (Word's
+  // `<w:lastRenderedPageBreak/>` marker) is informational — it records where
+  // Word last broke the page. ECMA-376 §17.4.16 does NOT specify it as a
+  // forced break, and Word does not honor it as one on reflow. Preserve the
+  // attr through round-trip so the marker is re-emitted on save, but do not
+  // act on it during layout.
+  if (pmAttrs.pageBreakBefore) {
     attrs.pageBreakBefore = true;
   }
   if (pmAttrs.keepNext) {
