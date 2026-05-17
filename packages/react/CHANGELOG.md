@@ -1,5 +1,15 @@
 # @eigenpal/docx-js-editor
 
+## 0.5.2
+
+### Patch Changes
+
+- 5e08f28: Render anchored DOCX text boxes with square text wrapping instead of converting them into standalone blocks.
+- 94b24a4: Fix dense footnote rendering at page bottom
+- d6c2548: Preserve fields, nested SDTs, and math inside `<w:sdt>` content controls so docProps-bound titles wrapped in SDT render correctly.
+- 03a3097: Preserve fields, nested SDTs, and math inside inline SDT content on save. Completes #482 by mirroring its parser-side widening in the serializer and PM → Document converter so docProps-bound title fields survive a full load → edit → save round-trip.
+- 6f8e8a4: Inherit header/footer references and titlePg from earlier sections per ECMA-376 §17.6. Fixes templates that set these on the cover sectPr only.
+
 ## 0.5.1
 
 ### Patch Changes
