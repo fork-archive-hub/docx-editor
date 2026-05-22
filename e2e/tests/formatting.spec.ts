@@ -18,7 +18,7 @@ test.describe('Bold Formatting', () => {
 
   test.beforeEach(async ({ page }) => {
     editor = new EditorPage(page);
-    await editor.goto();
+    await editor.gotoEmpty();
     await editor.waitForReady();
     await editor.newDocument();
     await editor.focus();
@@ -87,7 +87,7 @@ test.describe('Italic Formatting', () => {
 
   test.beforeEach(async ({ page }) => {
     editor = new EditorPage(page);
-    await editor.goto();
+    await editor.gotoEmpty();
     await editor.waitForReady();
     await editor.newDocument();
     await editor.focus();
@@ -134,7 +134,7 @@ test.describe('Underline Formatting', () => {
 
   test.beforeEach(async ({ page }) => {
     editor = new EditorPage(page);
-    await editor.goto();
+    await editor.gotoEmpty();
     await editor.waitForReady();
     await editor.newDocument();
     await editor.focus();
@@ -162,7 +162,7 @@ test.describe('Strikethrough Formatting', () => {
 
   test.beforeEach(async ({ page }) => {
     editor = new EditorPage(page);
-    await editor.goto();
+    await editor.gotoEmpty();
     await editor.waitForReady();
     await editor.newDocument();
     await editor.focus();
@@ -182,7 +182,7 @@ test.describe('Combined Formatting', () => {
 
   test.beforeEach(async ({ page }) => {
     editor = new EditorPage(page);
-    await editor.goto();
+    await editor.gotoEmpty();
     await editor.waitForReady();
     await editor.newDocument();
     await editor.focus();
@@ -230,7 +230,7 @@ test.describe('Clear Formatting', () => {
 
   test.beforeEach(async ({ page }) => {
     editor = new EditorPage(page);
-    await editor.goto();
+    await editor.gotoEmpty();
     await editor.waitForReady();
     await editor.newDocument();
     await editor.focus();
@@ -266,7 +266,7 @@ test.describe('Formatting with Selection', () => {
 
   test.beforeEach(async ({ page }) => {
     editor = new EditorPage(page);
-    await editor.goto();
+    await editor.gotoEmpty();
     await editor.waitForReady();
     await editor.newDocument();
     await editor.focus();
@@ -312,7 +312,7 @@ test.describe('Formatting Edge Cases', () => {
 
   test.beforeEach(async ({ page }) => {
     editor = new EditorPage(page);
-    await editor.goto();
+    await editor.gotoEmpty();
     await editor.waitForReady();
     await editor.newDocument();
     await editor.focus();

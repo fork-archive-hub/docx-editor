@@ -19,7 +19,7 @@ test.describe('Basic Text Input', () => {
 
   test.beforeEach(async ({ page }) => {
     editor = new EditorPage(page);
-    await editor.goto();
+    await editor.gotoEmpty();
     await editor.waitForReady();
     await editor.newDocument();
     await editor.focus();
@@ -61,7 +61,7 @@ test.describe('Line Breaks and Paragraphs', () => {
 
   test.beforeEach(async ({ page }) => {
     editor = new EditorPage(page);
-    await editor.goto();
+    await editor.gotoEmpty();
     await editor.waitForReady();
     await editor.newDocument();
     await editor.focus();
@@ -132,7 +132,7 @@ test.describe('Backspace and Delete', () => {
 
   test.beforeEach(async ({ page }) => {
     editor = new EditorPage(page);
-    await editor.goto();
+    await editor.gotoEmpty();
     await editor.waitForReady();
     await editor.newDocument();
     await editor.focus();
@@ -203,7 +203,7 @@ test.describe('Selection', () => {
 
   test.beforeEach(async ({ page }) => {
     editor = new EditorPage(page);
-    await editor.goto();
+    await editor.gotoEmpty();
     await editor.waitForReady();
     await editor.newDocument();
     await editor.focus();
@@ -252,7 +252,7 @@ test.describe('Copy, Cut, Paste', () => {
 
   test.beforeEach(async ({ page }) => {
     editor = new EditorPage(page);
-    await editor.goto();
+    await editor.gotoEmpty();
     await editor.waitForReady();
     await editor.newDocument();
     await editor.focus();
@@ -297,7 +297,7 @@ test.describe('Navigation', () => {
 
   test.beforeEach(async ({ page }) => {
     editor = new EditorPage(page);
-    await editor.goto();
+    await editor.gotoEmpty();
     await editor.waitForReady();
     await editor.newDocument();
     await editor.focus();
@@ -346,7 +346,7 @@ test.describe('Edge Cases', () => {
 
   test.beforeEach(async ({ page }) => {
     editor = new EditorPage(page);
-    await editor.goto();
+    await editor.gotoEmpty();
     await editor.waitForReady();
     await editor.newDocument();
     await editor.focus();

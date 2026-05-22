@@ -111,6 +111,15 @@ export class EditorPage {
   }
 
   /**
+   * Navigate with the editor booted from an empty document. Use this for
+   * tests that build their own content — it avoids racing the demo fixture
+   * the example app otherwise fetches on mount.
+   */
+  async gotoEmpty(): Promise<void> {
+    await this.page.goto('/?e2e=1&empty=1');
+  }
+
+  /**
    * Wait for the editor to be ready
    */
   async waitForReady(): Promise<void> {
@@ -481,10 +490,46 @@ export class EditorPage {
    * Apply bold formatting via toolbar
    */
   async applyBold(): Promise<void> {
-    await this.boldButton.click();
-    // Wait for selection to be restored after the DOM re-renders
-    // Uses requestAnimationFrame + setTimeout internally, so we need enough time
-    await this.page.waitForTimeout(100);
+    await this.applyToolbarFormat(this.boldButton);
+  }
+
+  /**
+   * Click a toolbar formatting button and wait for the editor to settle.
+   *
+   * A toolbar click moves DOM focus onto the button and triggers an async
+   * re-render (requestAnimationFrame + setTimeout) that restores the editor's
+   * focus and selection. Tests that press keys right after formatting need
+   * that focus back on the document, so wait for it explicitly instead of
+   * guessing with a fixed delay.
+   */
+  private async applyToolbarFormat(button: Locator): Promise<void> {
+    await button.click();
+    await this.page
+      .waitForFunction(() => !!document.activeElement?.closest('.ProseMirror'), {
+        timeout: 2000,
+      })
+      .catch(() => {
+        // Focus did not return (e.g. empty selection); fall back to the settle
+        // below so the re-render still completes before the next action.
+      });
+    await this.waitForEditorSettle();
+  }
+
+  /**
+   * Wait for the editor to finish the layout re-render a formatting change
+   * triggers. Until this settles, the painted pages are stale and keyboard
+   * navigation (arrows, Home/End) is dropped, so any test that types or moves
+   * the caret right after formatting must wait for it.
+   */
+  private async waitForEditorSettle(): Promise<void> {
+    await this.page.evaluate(
+      () =>
+        new Promise<void>((resolve) => {
+          // Two animation frames clear the layout pipeline's rAF, then a short
+          // timeout covers the trailing setTimeout it schedules internally.
+          requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(resolve, 250)));
+        })
+    );
   }
 
   /**
@@ -499,10 +544,7 @@ export class EditorPage {
    * Apply italic formatting via toolbar
    */
   async applyItalic(): Promise<void> {
-    await this.italicButton.click();
-    // Wait for selection to be restored after the DOM re-renders
-    // Uses requestAnimationFrame + setTimeout internally, so we need enough time
-    await this.page.waitForTimeout(100);
+    await this.applyToolbarFormat(this.italicButton);
   }
 
   /**
@@ -517,10 +559,7 @@ export class EditorPage {
    * Apply underline formatting via toolbar
    */
   async applyUnderline(): Promise<void> {
-    await this.underlineButton.click();
-    // Wait for selection to be restored after the DOM re-renders
-    // Uses requestAnimationFrame + setTimeout internally, so we need enough time
-    await this.page.waitForTimeout(100);
+    await this.applyToolbarFormat(this.underlineButton);
   }
 
   /**
@@ -535,10 +574,7 @@ export class EditorPage {
    * Apply strikethrough formatting via toolbar
    */
   async applyStrikethrough(): Promise<void> {
-    await this.strikethroughButton.click();
-    // Wait for selection to be restored after the DOM re-renders
-    // Uses requestAnimationFrame + setTimeout internally, so we need enough time
-    await this.page.waitForTimeout(100);
+    await this.applyToolbarFormat(this.strikethroughButton);
   }
 
   /**
@@ -1193,9 +1229,44 @@ export class EditorPage {
    * Click New button to create a new document
    */
   async newDocument(): Promise<void> {
+    // The demo app fetches docx-editor-demo.docx asynchronously on mount and
+    // its load lifecycle (unzip -> parse -> layout) keeps running well after
+    // the page is interactive. Clicking "New" while that is still in flight
+    // lets the load finish afterwards and clobber the empty document — this
+    // was the root cause of the long-standing formatting/text-editing test
+    // failures. Wait for the document to stop changing before resetting.
+    await this.waitForDocumentTextStable();
+
     await this.page.locator('button:has-text("New")').click();
-    // Wait for document to be replaced with empty state
-    await this.page.waitForTimeout(500);
+
+    // Confirm the editor actually reset to an empty document before returning.
+    await this.page.waitForFunction(
+      () => (window.__DOCX_EDITOR_E2E__?.agentGetDocumentText() ?? '').trim().length === 0,
+      { timeout: 5000 }
+    );
+  }
+
+  /**
+   * Poll the document text until it stops changing, i.e. any in-flight load
+   * (the demo fixture the example app fetches on mount) has fully settled.
+   */
+  private async waitForDocumentTextStable(): Promise<void> {
+    let previous: string | null = null;
+    let stableReads = 0;
+    const deadline = Date.now() + 15000;
+    while (Date.now() < deadline) {
+      const text = await this.page.evaluate(
+        () => window.__DOCX_EDITOR_E2E__?.agentGetDocumentText() ?? ''
+      );
+      if (text === previous) {
+        // Three identical reads in a row -> the load lifecycle has settled.
+        if (++stableReads >= 2) return;
+      } else {
+        stableReads = 0;
+        previous = text;
+      }
+      await this.page.waitForTimeout(200);
+    }
   }
 
   // ============================================================================
